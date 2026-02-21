@@ -1,0 +1,19 @@
+[versions]
+gson = "2.3.1" # Provided by Spigot 1.8.8
+checker-qual = "3.21.1"
+indra = "3.1.2"
+spigot-api = "1.20.1-R0.1-SNAPSHOT"
+fastutil = "8.5.9"
+netty-buffer = "4.1.82.Final"
+
+[libraries]
+gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
+checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checker-qual" }
+spigot-api = { module = "org.spigotmc:spigot-api", version.ref = "spigot-api"}
+fastutil = { module = "it.unimi.dsi:fastutil", version.ref = "fastutil"}
+netty-buffer = { module = "io.netty:netty-buffer", version.ref = "netty-buffer"}
+
+[plugins]
+indra = { id = "net.kyori.indra", version.ref = "indra" }
+indra-publishing = { id = "net.kyori.indra.publishing", version.ref = "indra" }
+indra-licenser-spotless = { id = "net.kyori.indra.licenser.spotless", version.ref = "indra" }
