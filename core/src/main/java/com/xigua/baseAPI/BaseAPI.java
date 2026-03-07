@@ -1,6 +1,5 @@
 package com.xigua.baseAPI;
 
-import com.xigua.baseAPI.api.CoinAPI;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.eventListener.EventListener;
 import com.xigua.baseAPI.manager.*;
@@ -50,8 +49,6 @@ public final class BaseAPI extends JavaPlugin {
     private PlayerManager playerManager;      // 玩家数据管理
     @Getter
     private DatabaseManager databaseManager;  // 数据库
-    @Getter
-    public CoinAPI coinAPI;
 
     private ChannelRegistry registry;
     private PluginMessageUtils pluginMessageUtils;
