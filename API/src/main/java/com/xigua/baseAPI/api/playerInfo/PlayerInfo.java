@@ -16,11 +16,9 @@ public class PlayerInfo {
     @Builder.Default
     private String gameKey = "";
     @Builder.Default
-    private String gasServerUrl = "";
+    private String ShopServerUrl = "";
     @Builder.Default
     private String webServerUrl = "";
-    @Builder.Default
-    private int reviewStage = 0;
     @Builder.Default
     private long proxyUid = 0L;
     @Builder.Default

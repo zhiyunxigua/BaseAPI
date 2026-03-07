@@ -1,9 +1,7 @@
 package com.xigua.baseAPI;
 
 import com.xigua.baseAPI.api.CoinAPI;
-import com.xigua.baseAPI.api.database.CoinDatabase;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
-import com.xigua.baseAPI.api.versionWrapper.VersionWrapper;
 import com.xigua.baseAPI.eventListener.EventListener;
 import com.xigua.baseAPI.manager.*;
 import com.xigua.baseAPI.pluginmessage.ChannelRegistry;
@@ -41,8 +39,6 @@ public final class BaseAPI extends JavaPlugin {
     @Getter
     private EventListener eventListener;
     @Getter
-    private VersionWrapper versionWrapper;
-    @Getter
     private String serverVersion;
     private Map<UUID, PlayerInfo> playerInfos = new ConcurrentHashMap<UUID, PlayerInfo>();
 
@@ -53,14 +49,7 @@ public final class BaseAPI extends JavaPlugin {
     @Getter
     private PlayerManager playerManager;      // 玩家数据管理
     @Getter
-    private EconomyManager economyManager;    // 经济系统
-    @Getter
     private DatabaseManager databaseManager;  // 数据库
-    @Getter
-    private NPCManager npcManager;            // NPC系统
-
-    @Getter
-    private CoinDatabase coinDatabase;
     @Getter
     public CoinAPI coinAPI;
 
@@ -107,14 +96,7 @@ public final class BaseAPI extends JavaPlugin {
         configManager = new ConfigManager(this);
         commandManager = new CommandManager(this);
         playerManager = new PlayerManager(this);
-        economyManager = new EconomyManager(this);
         databaseManager = new DatabaseManager(this);
-        npcManager = new NPCManager(this);
-
-        // 初始化数据库
-        //initializeDatabase();
-
-        //coinAPI = new CoinAPI(this);
 
         System.out.println("BaseAPI 启动成功");
     }
@@ -209,41 +191,42 @@ public final class BaseAPI extends JavaPlugin {
     }
 
     public void getPlayerOrderList(final Player player, final FutureCallback<Map<String, Object>> callback) {
-        FutureCallback<HttpResponse> _cb = new FutureCallback<HttpResponse>(){
-
+        FutureCallback<HttpResponse> _cb = new FutureCallback<>(){
             @Override
             public void completed(HttpResponse response) {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    callback.failed(new Exception("请求玩家订单失败，错误码:" + response.getStatusLine().getStatusCode()));
-                    return;
-                }
                 try {
                     String responseStr = EntityUtils.toString(response.getEntity());
                     JsonObject object = JsonParser.parseString(responseStr).getAsJsonObject();
                     int resCode = object.get("code").getAsInt();
-                    if (resCode != 0) {
-                        callback.failed(new Exception("请求玩家订单失败，错误码:" + resCode));
+
+                    if (response.getStatusLine().getStatusCode() != 200 || resCode != 0) {
+                        Exception ex = new Exception("请求失败");
+                        Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.failed(ex));
                         return;
                     }
+
                     HashMap<String, Object> res = new HashMap<String, Object>();
                     res.put("player", player);
                     res.put("json_result", object);
-                    callback.completed(res);
-                }
-                catch (Exception e) {
-                    callback.failed(new Exception("请求玩家订单失败,json数据解析失败"));
+
+                    Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.completed(res));
+
+                } catch (Exception e) {
                     e.printStackTrace();
+                    Bukkit.getScheduler().runTask(BaseAPI.this, () ->
+                            callback.failed(new Exception("请求玩家订单失败,json数据解析失败"))
+                    );
                 }
             }
 
             @Override
             public void failed(Exception ex) {
-                callback.failed(ex);
+                Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.failed(ex));
             }
 
             @Override
             public void cancelled() {
-                callback.cancelled();
+                Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.cancelled());
             }
         };
         WebUtil.postGetItemOrders(player, _cb);
@@ -251,61 +234,44 @@ public final class BaseAPI extends JavaPlugin {
 
     public void finPlayerOrder(final Player player, List<String> orderList, final FutureCallback<Map<String, Object>> callback) {
         FutureCallback<HttpResponse> _cb = new FutureCallback<HttpResponse>(){
-
             @Override
             public void completed(HttpResponse response) {
-                if (response.getStatusLine().getStatusCode() != 200) {
-                    callback.failed(new Exception("通知网易服务器修改订单失败，错误码:" + response.getStatusLine().getStatusCode()));
-                    return;
-                }
                 try {
                     String responseStr = EntityUtils.toString(response.getEntity());
                     JsonObject object = JsonParser.parseString(responseStr).getAsJsonObject();
                     int resCode = object.get("code").getAsInt();
-                    if (resCode != 0) {
-                        callback.failed(new Exception("通知网易服务器修改订单失败，错误码:" + resCode));
+
+                    if (response.getStatusLine().getStatusCode() != 200 || resCode != 0) {
+                        Exception ex = new Exception("通知失败");
+                        Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.failed(ex));
                         return;
                     }
+
                     HashMap<String, Object> res = new HashMap<String, Object>();
                     res.put("player", player);
                     res.put("json_result", object);
-                    callback.completed(res);
-                }
-                catch (Exception e) {
-                    callback.failed(new Exception("通知网易服务器修改订单失败，,json数据解析失败"));
+
+                    Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.completed(res));
+
+                } catch (Exception e) {
                     e.printStackTrace();
+                    Bukkit.getScheduler().runTask(BaseAPI.this, () ->
+                            callback.failed(new Exception("通知网易服务器修改订单失败,json数据解析失败"))
+                    );
                 }
             }
 
             @Override
             public void failed(Exception ex) {
-                callback.failed(ex);
+                Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.failed(ex));
             }
 
             @Override
             public void cancelled() {
-                callback.cancelled();
+                Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.cancelled());
             }
         };
         WebUtil.postFinPlayerOrder(player, orderList, _cb);
-    }
-
-    private void initializeDatabase() {
-        coinDatabase = new CoinDatabase(
-                configManager.getDatabaseUrl(),
-                configManager.getDatabaseUsername(),
-                configManager.getDatabasePassword(),
-                configManager.getTableName(),
-                configManager.getDatabaseName()
-        );
-
-        if (coinDatabase.connect()) {
-            coinDatabase.createTableIfNotExists();
-            getLogger().info("§a数据库连接成功！");
-        } else {
-            getLogger().severe("§c数据库连接失败！");
-            getServer().getPluginManager().disablePlugin(this);
-        }
     }
 
     public List<Long> getAllPlayerUids() {
@@ -325,11 +291,11 @@ public final class BaseAPI extends JavaPlugin {
         return res;
     }
 
-    private long getPlayerUid(UUID uuid) {
+    public long getPlayerUid(UUID uuid) {
         return this.getPlayerInfo(uuid).getProxyUid();
     }
 
-    private long getPlayerUid(Player player) {
+    public long getPlayerUid(Player player) {
         return this.getPlayerInfo(player).getProxyUid();
     }
 

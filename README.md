@@ -3,11 +3,59 @@
 ## 概述
 包含一些基础API，方便开发服务器
 
+提示，某些功能可能需要搭配这个[Geyser](https://github.com/zhiyunxigua/Geyser)才能正常使用
+
 ## 目录
-1. [API 获取与初始化](#API-获取与初始化)
-2. [核心 API 方法详解](#核心-API-方法详解)
-3. [监听方法详解](#监听方法详解)
-4. [构造Form](docs/FORM.md)
+1. [添加依赖](#添加依赖)
+2. [API 获取与初始化](#API-获取与初始化)
+3. [核心 API 方法详解](#核心-API-方法详解)
+4. [监听方法详解](#监听方法详解)
+5. [构造Form](docs/FORM.md)
+
+## 添加依赖
+
+### Maven
+#### Repository:
+```xml
+<repositories>
+    <repository>
+        <id>xigua-maven-repo</id>
+        <url>https://raw.githubusercontent.com/zhiyunxigua/maven-repo/master/</url>
+        <snapshots>
+            <enabled>true</enabled>
+            <updatePolicy>always</updatePolicy>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
+#### Dependencies:
+```xml
+<dependencies>
+    <dependency>
+        <groupId>com.xigua</groupId>
+        <artifactId>BaseAPI</artifactId>
+        <version>1.0.0</version>
+        <scope>provided</scope>
+    </dependency>
+</dependencies>
+```
+
+### Gradle
+#### Repository:
+```kts
+repositories {
+    mavenCentral()
+    maven("https://raw.githubusercontent.com/zhiyunxigua/maven-repo/master/")
+} 
+```
+
+#### Dependencies:
+```kts
+dependencies {
+    compileOnly("com.xigua:BaseAPI:1.0.0")
+}
+```
 
 ## API 获取与初始化
 

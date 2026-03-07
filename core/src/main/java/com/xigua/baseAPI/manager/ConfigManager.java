@@ -14,7 +14,7 @@ public class ConfigManager {
 
     // 是否使用自定义商店
     public boolean getUseCustomShop() {
-        return config.getBoolean("useCustomShop", false);
+        return config.getBoolean("use-custom-shop", false);
     }
 
     // 数据库配置

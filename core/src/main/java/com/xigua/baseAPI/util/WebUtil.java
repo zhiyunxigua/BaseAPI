@@ -38,6 +38,8 @@ public class WebUtil {
     public static String REPORT_FRIEND_ONLINE_URL;
     public static String GAS_SERVER_BASE_URL;
     public static String TEST_GAS_SERVER_BASE_URL;
+    public static String WEB_SERVER_BASE_URL;
+    public static String TEST_WEB_SERVER_BASE_URL;
 
     public static void startHttpClient() {
         plugin.getLogger().info("http client start");
@@ -65,7 +67,7 @@ public class WebUtil {
             jsonObject.addProperty("gameid", playerinfo.getGameId());
             jsonObject.addProperty("uuid", playerinfo.getUuid().toString());
             json = jsonObject.toString();
-            String validUrl = WebUtil.getShipBaseUrl(playerinfo.getGasServerUrl(), playerinfo.isTestServer()) + GET_ORDER_ITEM_URL;
+            String validUrl = WebUtil.getShipBaseUrl(playerinfo.getShopServerUrl(), playerinfo.isTestServer()) + GET_ORDER_ITEM_URL;
             HashMap<String, String> headMaps = new HashMap<String, String>();
             String signStr = WebUtil.getServerSign(playerinfo.getGameKey(), "POST", GET_ORDER_ITEM_URL, json);
             headMaps.put("Netease-Server-Sign", signStr);
@@ -91,7 +93,7 @@ public class WebUtil {
             jsonObject.addProperty("uuid", playerinfo.getUuid().toString());
             jsonObject.add("orderid_list", orderIdsArray);
             json = jsonObject.toString();
-            String validUrl = WebUtil.getShipBaseUrl(playerinfo.getGasServerUrl(), playerinfo.isTestServer()) + SHIP_ITEM_URL;
+            String validUrl = WebUtil.getShipBaseUrl(playerinfo.getShopServerUrl(), playerinfo.isTestServer()) + SHIP_ITEM_URL;
             HashMap<String, String> headMaps = new HashMap<String, String>();
             String signStr = WebUtil.getServerSign(playerinfo.getGameKey(), "POST", SHIP_ITEM_URL, json);
             headMaps.put("Netease-Server-Sign", signStr);
@@ -163,6 +165,16 @@ public class WebUtil {
         return GAS_SERVER_BASE_URL;
     }
 
+    public static String getWebServerUrl(String webServerUrl, Boolean isTestServer) {
+        if (!webServerUrl.equals("")) {
+            return webServerUrl;
+        }
+        if (isTestServer.booleanValue()) {
+            return WEB_SERVER_BASE_URL;
+        }
+        return TEST_WEB_SERVER_BASE_URL;
+    }
+
     public static String getServerSign(String signKey, String method, String path, String httpBody) throws Exception {
         String str2sign = method + path + httpBody;
         String signStr = WebUtil.hmacWithJava("HmacSHA256", str2sign, signKey);
@@ -209,7 +221,7 @@ public class WebUtil {
                 PlayerInfo playerinfo = plugin.getPlayerInfo(player);
                 uids.add(Long.toString(playerinfo.getProxyUid()));
                 if (webServerUrl != null) continue;
-                webServerUrl = playerinfo.getWebServerUrl();
+                webServerUrl = WebUtil.getWebServerUrl(playerinfo.getWebServerUrl(), playerinfo.isTestServer());
             }
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("sign", "62bd6025d29b17ff");
@@ -235,6 +247,8 @@ public class WebUtil {
         REPORT_FRIEND_ONLINE_URL = "/game-server-info/collect-play-list";
         GAS_SERVER_BASE_URL = "http://gasproxy.mc.netease.com:60002";
         TEST_GAS_SERVER_BASE_URL = "http://gasproxy.mc.netease.com:60001";
+        WEB_SERVER_BASE_URL = "https://g79mclobt.nie.netease.com";
+        TEST_WEB_SERVER_BASE_URL = "https://g79mclexpr1.nie.netease.com";
         httpClient = HttpAsyncClients.createDefault();
     }
 }

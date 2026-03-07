@@ -105,10 +105,8 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                 args = (List) ((Map) list.get(1)).get("value");
 
             } else {
-                plugin.getLogger().warning("未知的网易RPC消息格式: " + unpacked.getClass().getName());
                 return Result.handled();
             }
-
             switch (method) {
                 case "ModEventC2S":
                     handleModEvent(player, args);
@@ -117,17 +115,13 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                     handleAddonFinish(player);
                     break;
                 case "SetPlayerInfo":
-                    this.setPlayerInfo(player, (Map<String, Object>) args.get(3));
+                    this.setPlayerInfo(player, (Map<String, Object>) args.get(0));
                     break;
                 default:
                     break;
             }
 
-        } catch (IOException e) {
-            plugin.getLogger().warning("解析网易RPC消息失败: " + e.getMessage());
-            if (plugin.getConfig().getBoolean("debug", false)) {
-                e.printStackTrace();
-            }
+        } catch (IOException ignored) {
         }
 
         return Result.handled();
@@ -168,15 +162,19 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
     public void setPlayerInfo(Player player, Map<String, Object> data) {
         UUID uuid = player.getUniqueId();
         PlayerInfo info = new PlayerInfo();
+        System.out.println(data.getOrDefault("ProxyUid", 0));
         info.setGameId((String) data.getOrDefault("GameId", "0"));
-        info.setGameKey((String) data.getOrDefault("GameKey", "game_key"));
-        info.setGasServerUrl((String) data.getOrDefault("GasServerUrl", ""));
-        info.setWebServerUrl((String) data.getOrDefault("WebServerUrl", "https://g79mclexpr1.nie.netease.com"));
-        info.setReviewStage((int) data.getOrDefault("ReviewStage", 0));
-        info.setProxyUid((long) data.getOrDefault("ProxyUid", player.getEntityId()));
-        info.setUuid((UUID) data.getOrDefault("Uuid", uuid));
-        if ((int) data.getOrDefault("ReviewStage", 0) != 2) {
-            info.setTestServer(true);
+        info.setGameKey((String) data.getOrDefault("GameKey", ""));
+        info.setTestServer((boolean) data.getOrDefault("TestServer", true));
+        info.setShopServerUrl((String) data.getOrDefault("ShopServerUrl", ""));
+        info.setWebServerUrl((String) data.getOrDefault("WebServerUrl", ""));
+        info.setProxyUid(((Number) data.getOrDefault("ProxyUid", 0)).longValue());
+        Object uuidObj = data.getOrDefault("Uuid", uuid);
+        if (uuidObj instanceof String) {
+            try {
+                info.setUuid(UUID.fromString((String) uuidObj));
+            } catch (IllegalArgumentException ignored) {
+            }
         }
         this.playerInfos.put(uuid, info);
     }
@@ -190,7 +188,6 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
             byte[] packet = PyRpcPacker.pack(namespace, system, event, data);
             return sendPacket(player, packet);
         } catch (IOException e) {
-            plugin.getLogger().warning("打包ModEventS2C失败: " + e.getMessage());
             return false;
         }
     }

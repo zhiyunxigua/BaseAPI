@@ -1,7 +1,6 @@
 package com.xigua.baseAPI.api;
 
 import com.xigua.baseAPI.BaseAPI;
-import com.xigua.baseAPI.api.database.CoinDatabase;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;

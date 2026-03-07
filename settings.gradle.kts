@@ -16,6 +16,3 @@ dependencyResolutionManagement {
 include(":API")
 include(":core")
 include(":cumulus")
-include(":v1_18_R2")
-include(":v1_20_R1")
-include(":v1_21")
