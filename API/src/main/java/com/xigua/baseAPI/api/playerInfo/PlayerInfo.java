@@ -1,5 +1,6 @@
 package com.xigua.baseAPI.api.playerInfo;
 
+import com.xigua.baseAPI.api.InputMode;
 import lombok.*;
 
 import java.util.UUID;
@@ -21,6 +22,8 @@ public class PlayerInfo {
     private String webServerUrl = "";
     @Builder.Default
     private long proxyUid = 0L;
+    @Builder.Default
+    private InputMode inputMode = null;
     @Builder.Default
     private boolean isTestServer = false;
     private UUID uuid;

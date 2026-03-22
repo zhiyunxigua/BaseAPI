@@ -13,48 +13,14 @@
 5. [构造Form](docs/FORM.md)
 
 ## 添加依赖
+下载 BaseAPI 的jar包，然后执行以下指令，path-to-jar替换为jar路径
 
-### Maven
-#### Repository:
-```xml
-<repositories>
-    <repository>
-        <id>xigua-maven-repo</id>
-        <url>https://raw.githubusercontent.com/zhiyunxigua/maven-repo/master/</url>
-        <snapshots>
-            <enabled>true</enabled>
-            <updatePolicy>always</updatePolicy>
-        </snapshots>
-    </repository>
-</repositories>
-```
-
-#### Dependencies:
-```xml
-<dependencies>
-    <dependency>
-        <groupId>com.xigua</groupId>
-        <artifactId>BaseAPI</artifactId>
-        <version>1.0.0</version>
-        <scope>provided</scope>
-    </dependency>
-</dependencies>
-```
-
-### Gradle
-#### Repository:
-```kts
-repositories {
-    mavenCentral()
-    maven("https://raw.githubusercontent.com/zhiyunxigua/maven-repo/master/")
-} 
-```
-
-#### Dependencies:
-```kts
-dependencies {
-    compileOnly("com.xigua:BaseAPI:1.0.0")
-}
+```shell
+mvn install:install-file -Dfile=path-to-jar
+  -DgroupId=com.xigua
+  -DartifactId=BaseAPI
+  -Dversion=1.0.1
+  -Dpackaging=jar
 ```
 
 ## API 获取与初始化
@@ -215,6 +181,7 @@ public class YourPlugin extends JavaPlugin {
 | `ClientLoadAddonFinishEvent` | 玩家客户端加载Mod完成事件 |
 | `PlayerBuyItemSuccessEvent`  | 玩家购买成功事件       |
 | `PlayerUrgeShipEvent`        | 玩家催发货事件        |
+| `PlayerInputModeChangeEvent` | 玩家输入模式改变事件     |
 
 使用示例
 ```java
@@ -246,6 +213,13 @@ public class EventListener implements Listener {
   @EventHandler
   public void onPlayerUrgeShip(PlayerUrgeShipEvent event) {
     Player player = event.player;
+  }
+
+  @EventHandler
+  public void onPlayerInputModeChange(PlayerInputModeChangeEvent event) {
+    Player player = event.player;
+    InputMode oldInputMode = event.getOldInputMode();
+    InputMode newInputMode = event.getNewInputMode();
   }
 
 }

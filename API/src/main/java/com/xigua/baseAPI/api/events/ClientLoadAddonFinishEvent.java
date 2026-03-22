@@ -1,15 +1,14 @@
 package com.xigua.baseAPI.api.events;
 
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 
-public class ClientLoadAddonFinishEvent extends Event {
+public class ClientLoadAddonFinishEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
-    public final Player player;
 
     public ClientLoadAddonFinishEvent(Player player) {
-        this.player = player;
+        super(player);
     }
 
     public static HandlerList getHandlerList() {

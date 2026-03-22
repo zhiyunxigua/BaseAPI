@@ -9,6 +9,7 @@ import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -23,7 +24,7 @@ implements Listener {
         this.plugin = plugin;
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
         this.plugin.removePlayerInfo(player);
@@ -31,9 +32,9 @@ implements Listener {
 
     @EventHandler
     public void onNeteasePython(NeteasePythonEvent event) {
-        Player player = event.player;
-        if (Objects.equals(event.namespace, "neteaseShop") && Objects.equals(event.systemName, "neteaseShopBeh")) {
-            switch (event.eventName) {
+        Player player = event.getPlayer();
+        if (Objects.equals(event.getNamespace(), "neteaseShop") && Objects.equals(event.getSystemName(), "neteaseShopBeh")) {
+            switch (event.getEventName()) {
                 case "clientEnterEvent":
                     PlayerInfo playerInfo = this.plugin.getPlayerInfo(player);
                     if (playerInfo == null) {
@@ -63,7 +64,7 @@ implements Listener {
     public void onClientLoadAddonFinish(ClientLoadAddonFinishEvent event) {
         HashMap<String, Object> resData = new HashMap<String, Object>();
         resData.put("open", false);
-        this.plugin.notifyToClient(event.player, "Minecraft", "chatExtension", "ChatExtensionOpenStateChangedEvent", resData);
+        this.plugin.notifyToClient(event.getPlayer(), "Minecraft", "chatExtension", "ChatExtensionOpenStateChangedEvent", resData);
     }
 }
 

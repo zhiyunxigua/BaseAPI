@@ -47,9 +47,6 @@ tasks {
         archiveClassifier.set("")
         archiveFileName.set("${rootProject.name}-${project.version}.jar")
 
-        //from(project(":v1_18_R2").sourceSets.main.get().output)
-        //from(project(":v1_21").sourceSets.main.get().output)
-
         minimize ()
     }
 

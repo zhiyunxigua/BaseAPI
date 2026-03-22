@@ -62,13 +62,13 @@ public class WebUtil {
     public static void postGetItemOrders(Player player, FutureCallback<HttpResponse> callback) {
         try {
             PlayerInfo playerinfo = plugin.getPlayerInfo(player);
-            String json = "";
+            String json;
             JsonObject jsonObject = new JsonObject();
             jsonObject.addProperty("gameid", playerinfo.getGameId());
             jsonObject.addProperty("uuid", playerinfo.getUuid().toString());
             json = jsonObject.toString();
             String validUrl = WebUtil.getShipBaseUrl(playerinfo.getShopServerUrl(), playerinfo.isTestServer()) + GET_ORDER_ITEM_URL;
-            HashMap<String, String> headMaps = new HashMap<String, String>();
+            HashMap<String, String> headMaps = new HashMap<>();
             String signStr = WebUtil.getServerSign(playerinfo.getGameKey(), "POST", GET_ORDER_ITEM_URL, json);
             headMaps.put("Netease-Server-Sign", signStr);
             StringEntity entity = new StringEntity(json);
@@ -78,6 +78,17 @@ public class WebUtil {
             plugin.getLogger().warning("http client init get item orders post url error:" + e);
             e.printStackTrace();
         }
+    }
+
+    public static String getServerSign(String signKey, String method, String path, String httpBody) throws Exception {
+        String str2sign = method + path + httpBody;
+        String signStr = WebUtil.hmacWithJava("HmacSHA256", str2sign, signKey);
+        if (signStr.length() < 64) {
+            int preLen = 64 - signStr.length();
+            String preZero = "0";
+            signStr = String.join("", Collections.nCopies(preLen, preZero)) + signStr;
+        }
+        return signStr;
     }
 
     public static void postFinPlayerOrder(Player player, List<String> orderIds, FutureCallback<HttpResponse> callback) {
@@ -173,17 +184,6 @@ public class WebUtil {
             return WEB_SERVER_BASE_URL;
         }
         return TEST_WEB_SERVER_BASE_URL;
-    }
-
-    public static String getServerSign(String signKey, String method, String path, String httpBody) throws Exception {
-        String str2sign = method + path + httpBody;
-        String signStr = WebUtil.hmacWithJava("HmacSHA256", str2sign, signKey);
-        if (signStr.length() < 64) {
-            int preLen = 64 - signStr.length();
-            String preZero = "0";
-            signStr = String.join((CharSequence)"", Collections.nCopies(preLen, preZero)) + signStr;
-        }
-        return signStr;
     }
 
     public static String hmacWithJava(String algorithm, String data, String key) throws Exception {

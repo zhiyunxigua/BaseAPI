@@ -1,33 +1,10 @@
-/*
- * Copyright (c) 2019-2022 GeyserMC. http://geysermc.org
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
- * @author GeyserMC
- * @link https://github.com/GeyserMC/Floodgate
- */
-
 package com.xigua.baseAPI.pluginmessage.channel;
 
 import com.xigua.baseAPI.BaseAPI;
+import com.xigua.baseAPI.api.InputMode;
 import com.xigua.baseAPI.api.events.ClientLoadAddonFinishEvent;
 import com.xigua.baseAPI.api.events.NeteasePythonEvent;
+import com.xigua.baseAPI.api.events.PlayerInputModeChangeEvent;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.api.protocol.packet.PyRpcPacker;
 import com.xigua.baseAPI.pluginmessage.PluginMessageChannel;
@@ -117,6 +94,9 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                 case "SetPlayerInfo":
                     this.setPlayerInfo(player, (Map<String, Object>) args.get(0));
                     break;
+                case "PlayerInputMode":
+                    this.playerInputMode(player, (Map<String, Object>) args.get(0));
+                    break;
                 default:
                     break;
             }
@@ -162,7 +142,6 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
     public void setPlayerInfo(Player player, Map<String, Object> data) {
         UUID uuid = player.getUniqueId();
         PlayerInfo info = new PlayerInfo();
-        System.out.println(data.getOrDefault("ProxyUid", 0));
         info.setGameId((String) data.getOrDefault("GameId", "0"));
         info.setGameKey((String) data.getOrDefault("GameKey", ""));
         info.setTestServer((boolean) data.getOrDefault("TestServer", true));
@@ -177,6 +156,35 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
             }
         }
         this.playerInfos.put(uuid, info);
+    }
+
+    public void playerInputMode(Player player, Map<String, Object> data) {
+        UUID uuid = player.getUniqueId();
+
+        // 获取输入模式
+        Object inputModeObj = data.get("input_mode");
+        InputMode inputMode = null;
+
+        if (inputModeObj instanceof String) {
+            try {
+                inputMode = InputMode.valueOf((String) inputModeObj);
+            } catch (IllegalArgumentException e) {
+                plugin.getLogger().warning("Unknown input mode: " + inputModeObj);
+            }
+        }
+
+        // 更新玩家信息
+        PlayerInfo playerInfo = playerInfos.get(uuid);
+        if (playerInfo == null) {
+            playerInfo = new PlayerInfo();
+            playerInfos.put(uuid, playerInfo);
+        }
+
+        InputMode oldInputMode = playerInfo.getInputMode();
+        playerInfo.setInputMode(inputMode);
+
+        PlayerInputModeChangeEvent event = new PlayerInputModeChangeEvent(player, oldInputMode, inputMode);
+        Bukkit.getPluginManager().callEvent(event);
     }
 
     public boolean sendPacket(UUID player, byte[] packet) {

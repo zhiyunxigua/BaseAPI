@@ -1,15 +1,15 @@
 package com.xigua.baseAPI.api.events;
 
+import lombok.Getter;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
+import org.bukkit.event.player.PlayerEvent;
 
-public class PlayerBuyItemSuccessEvent extends Event {
+public class PlayerBuyItemSuccessEvent extends PlayerEvent {
     private static final HandlerList handlers = new HandlerList();
-    public final Player player;
 
     public PlayerBuyItemSuccessEvent(Player player) {
-        this.player = player;
+        super(player);
     }
 
     public static HandlerList getHandlerList() {

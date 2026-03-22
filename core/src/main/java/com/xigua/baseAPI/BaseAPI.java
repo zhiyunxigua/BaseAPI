@@ -26,6 +26,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.msgpack.core.annotations.Nullable;
 
 
@@ -95,6 +96,9 @@ public final class BaseAPI extends JavaPlugin {
         playerManager = new PlayerManager(this);
         databaseManager = new DatabaseManager(this);
 
+        // 启动ping发送
+        startPingTask();
+
         System.out.println("BaseAPI 启动成功");
     }
 
@@ -102,6 +106,22 @@ public final class BaseAPI extends JavaPlugin {
     public void onDisable() {
         WebUtil.stopHttpClient();
         // Plugin shutdown logic
+    }
+
+    public boolean isJavaPlayer(Player player) {
+        return isJavaPlayer(player.getUniqueId());
+    }
+
+    public boolean isJavaPlayer(UUID uuid) {
+        return getPlayerInfo(uuid) == null;
+    }
+
+    public boolean isBedrockPlayer(Player player) {
+        return isBedrockPlayer(player.getUniqueId());
+    }
+
+    public boolean isBedrockPlayer(UUID uuid) {
+        return getPlayerInfo(uuid) != null;
     }
 
     public boolean notifyToClient(Player player, String event, Map<String, Object> data) {
@@ -112,11 +132,15 @@ public final class BaseAPI extends JavaPlugin {
         return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
     }
 
-    public boolean notifyToMultiClients(List<Player> players, String namespace, String system, String event, Map<String, Object> data) {
+    public boolean notifyToClient(UUID uuid, String namespace, String system, String event, Map<String, Object> data) {
+        return neteaseChannel.sendModEvent(uuid, namespace, system, event, data);
+    }
+
+    public boolean notifyToMultiClients(Collection<? extends Player> players, String namespace, String system, String event, Map<String, Object> data) {
         for (Player player : players) {
-            return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
+            neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
         }
-        return false;
+        return true;
     }
 
     public boolean notifyToClientsNearby(@Nullable Player except, Location loc, double dist, String namespace, String system, String event, Map<String, Object> data) {
@@ -146,6 +170,29 @@ public final class BaseAPI extends JavaPlugin {
             return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
         }
         return false;
+    }
+
+    private void startPingTask() {
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // 获取所有在线玩家
+                Collection<? extends Player> players = Bukkit.getOnlinePlayers();
+
+                if (!players.isEmpty()) {
+                    Map<String, Object> data = new HashMap<>();
+                    for (Player player : players) {
+                        Map<String, Object> playerInfo = new HashMap<>();
+                        playerInfo.put("name", player.getDisplayName());
+                        playerInfo.put("value", player.getPing());
+
+                        data.put(player.getName(), playerInfo);
+                    }
+                    // 调用通知方法，发送给所有玩家
+                    notifyToMultiClients(players, "Xigua_common", "main", "ping_update", data);
+                }
+            }
+        }.runTaskTimer(this, 0L, 20L); // 20 ticks = 1秒
     }
 
     public boolean sendForm(UUID uuid, Form form) {
@@ -288,16 +335,20 @@ public final class BaseAPI extends JavaPlugin {
         return res;
     }
 
-    public long getPlayerUid(UUID uuid) {
-        return this.getPlayerInfo(uuid).getProxyUid();
+    public long getPlayerUid(Player player) {
+        return this.getPlayerUid(player.getUniqueId());
     }
 
-    public long getPlayerUid(Player player) {
-        return this.getPlayerInfo(player).getProxyUid();
+    public long getPlayerUid(UUID uuid) {
+        PlayerInfo playerInfo = this.getPlayerInfo(uuid);
+        if (playerInfo != null) {
+            return playerInfo.getProxyUid();
+        }
+        return -1L;
     }
 
     public PlayerInfo getPlayerInfo(Player player) {
-        return this.playerInfos.getOrDefault(player.getUniqueId(), null);
+        return this.getPlayerInfo(player.getUniqueId());
     }
 
     public PlayerInfo getPlayerInfo(UUID uuid) {
