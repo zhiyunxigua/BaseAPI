@@ -41,4 +41,8 @@ public class ConfigManager {
     public boolean getIsDebug() {
         return config.getBoolean("is-debug", false);
     }
+
+    public boolean getEnablePing() {
+        return config.getBoolean("enable-ping", false);
+    }
 }

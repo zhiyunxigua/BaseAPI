@@ -1,7 +1,7 @@
 name: BaseAPI
-version: 1.0.1
+version: 1.0.2
 main: com.xigua.baseAPI.BaseAPI
 load: STARTUP
 authors: [ 西瓜 ]
-description: 整合数据包、NPC、数据库与经济系统的统一前置核心，为插件开发提供高性能基础框架。
+description: 整合数据包、数据库和一些基础通用API的统一前置核心，为插件开发提供基础框架。
 website: xiguayun.com.cn

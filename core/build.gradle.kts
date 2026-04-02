@@ -14,8 +14,6 @@ dependencies {
     // 构建时依赖
     compileOnly(libs.spigot.api)
 
-    compileOnly(libs.fastutil)
-
     // Netty (for ByteBuf)
     compileOnly(libs.netty.buffer)
 
@@ -24,6 +22,8 @@ dependencies {
     // http服务
     implementation("org.apache.httpcomponents:httpclient:4.5.13")
     implementation("org.apache.httpcomponents:httpasyncclient:4.1.5")
+
+    implementation(libs.fastutil)
 
     // Nimbus JOSE + JWT
     implementation("com.nimbusds:nimbus-jose-jwt:9.25")

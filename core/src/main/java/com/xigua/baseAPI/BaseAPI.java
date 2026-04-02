@@ -1,5 +1,6 @@
 package com.xigua.baseAPI;
 
+import com.xigua.baseAPI.api.TopBar;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.eventListener.EventListener;
 import com.xigua.baseAPI.manager.*;
@@ -31,8 +32,6 @@ import org.msgpack.core.annotations.Nullable;
 
 
 public final class BaseAPI extends JavaPlugin {
-    private final String MESSAGE_NAME = "floodgate:netease";
-    private final String FORM_MESSAGE_NAME = "floodgate:form";
     public static String SHOP_MOD_NAME = "neteaseShop";
     public static String SHOP_SERVER_SYS = "neteaseShopDev";
     public static String SHOP_CLIENT_SYS = "neteaseShopBeh";
@@ -59,12 +58,9 @@ public final class BaseAPI extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        this.getLogger().info("BaseAPI onEnable");
         saveDefaultConfig();
         // 获取服务器版本
         serverVersion = Bukkit.getVersion();
-        // 应用版本适配器
-        //this.versionWrapper = new VersionMatcher().match();
         this.pluginMessageUtils = new PluginMessageUtils(this);
         // 注册插件消息
         this.formChannel = new FormChannel(this, pluginMessageUtils);
@@ -97,9 +93,11 @@ public final class BaseAPI extends JavaPlugin {
         databaseManager = new DatabaseManager(this);
 
         // 启动ping发送
-        startPingTask();
+        if (configManager.getEnablePing()) {
+            startPingTask();
+        }
 
-        System.out.println("BaseAPI 启动成功");
+        this.getLogger().info("BaseAPI 启动成功");
     }
 
     @Override
@@ -108,24 +106,12 @@ public final class BaseAPI extends JavaPlugin {
         // Plugin shutdown logic
     }
 
-    public boolean isJavaPlayer(Player player) {
-        return isJavaPlayer(player.getUniqueId());
-    }
-
-    public boolean isJavaPlayer(UUID uuid) {
-        return getPlayerInfo(uuid) == null;
-    }
-
-    public boolean isBedrockPlayer(Player player) {
-        return isBedrockPlayer(player.getUniqueId());
-    }
-
-    public boolean isBedrockPlayer(UUID uuid) {
-        return getPlayerInfo(uuid) != null;
-    }
-
     public boolean notifyToClient(Player player, String event, Map<String, Object> data) {
-        return neteaseChannel.sendModEvent(player.getUniqueId(), "Common", "main", event, data);
+        return neteaseChannel.sendModEvent(player.getUniqueId(), "Xigua_common", "main", event, data);
+    }
+
+    public boolean notifyToClient(UUID uuid, String event, Map<String, Object> data) {
+        return neteaseChannel.sendModEvent(uuid, "Xigua_common", "main", event, data);
     }
 
     public boolean notifyToClient(Player player, String namespace, String system, String event, Map<String, Object> data) {
@@ -193,6 +179,10 @@ public final class BaseAPI extends JavaPlugin {
                 }
             }
         }.runTaskTimer(this, 0L, 20L); // 20 ticks = 1秒
+    }
+
+    public boolean sendTopBar(UUID uuid, TopBar topBar) {
+        return notifyToClient(uuid, "initTopBar", topBar.toHashMap());
     }
 
     public boolean sendForm(UUID uuid, Form form) {
