@@ -185,6 +185,10 @@ public final class BaseAPI extends JavaPlugin {
         return notifyToClient(uuid, "initTopBar", topBar.toHashMap());
     }
 
+    public boolean updateTopBar(UUID uuid, TopBar topBar) {
+        return notifyToClient(uuid, "updateTopBar", topBar.toHashMap());
+    }
+
     public boolean sendForm(UUID uuid, Form form) {
         return formChannel.sendForm(uuid, form);
     }

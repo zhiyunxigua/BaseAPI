@@ -219,6 +219,9 @@ public class WebUtil {
             String webServerUrl = null;
             for (Player player : Bukkit.getOnlinePlayers()) {
                 PlayerInfo playerinfo = plugin.getPlayerInfo(player);
+                if (playerinfo == null) {
+                    continue; // 跳过这个玩家，继续处理其他玩家
+                }
                 uids.add(Long.toString(playerinfo.getProxyUid()));
                 if (webServerUrl != null) continue;
                 webServerUrl = WebUtil.getWebServerUrl(playerinfo.getWebServerUrl(), playerinfo.isTestServer());
