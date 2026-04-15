@@ -59,6 +59,16 @@ public final class BaseAPI extends JavaPlugin {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        // 注册管理器
+        configManager = new ConfigManager(this);
+        if (configManager.getIsDebug()) {
+            this.getLogger().info("debug启动");
+        }
+        commandManager = new CommandManager(this);
+        playerManager = new PlayerManager(this);
+        databaseManager = new DatabaseManager(this);
+
+
         // 获取服务器版本
         serverVersion = Bukkit.getVersion();
         this.pluginMessageUtils = new PluginMessageUtils(this);
@@ -86,12 +96,6 @@ public final class BaseAPI extends JavaPlugin {
             }
         }, 0L, 6000L);
 
-        // 注册管理器
-        configManager = new ConfigManager(this);
-        commandManager = new CommandManager(this);
-        playerManager = new PlayerManager(this);
-        databaseManager = new DatabaseManager(this);
-
         // 启动ping发送
         if (configManager.getEnablePing()) {
             startPingTask();
@@ -107,24 +111,27 @@ public final class BaseAPI extends JavaPlugin {
     }
 
     public boolean notifyToClient(Player player, String event, Map<String, Object> data) {
-        return neteaseChannel.sendModEvent(player.getUniqueId(), "Xigua_common", "main", event, data);
+        return this.notifyToClient(player.getUniqueId(), event, data);
     }
 
     public boolean notifyToClient(UUID uuid, String event, Map<String, Object> data) {
-        return neteaseChannel.sendModEvent(uuid, "Xigua_common", "main", event, data);
+        return this.notifyToClient(uuid, configManager.getClientNamespace(), configManager.getClientSystemName(), event, data);
     }
 
     public boolean notifyToClient(Player player, String namespace, String system, String event, Map<String, Object> data) {
-        return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
+        return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
     }
 
     public boolean notifyToClient(UUID uuid, String namespace, String system, String event, Map<String, Object> data) {
+        if (configManager.getIsDebug()) {
+            getLogger().info(String.format("发送PyRPC消息 %s:%s:%s 数据:%s", namespace, system, event, data));
+        }
         return neteaseChannel.sendModEvent(uuid, namespace, system, event, data);
     }
 
     public boolean notifyToMultiClients(Collection<? extends Player> players, String namespace, String system, String event, Map<String, Object> data) {
         for (Player player : players) {
-            neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
+            this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
         return true;
     }
@@ -137,7 +144,7 @@ public final class BaseAPI extends JavaPlugin {
             Location loc2 = player.getLocation();
             double dx = loc.getX() - loc2.getX();
             if (!(dx * dx + (dy = loc.getY() - loc2.getY()) * dy + (dz = loc.getZ() - loc2.getZ()) * dz < dist * dist)) continue;
-            return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
+            return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
         return false;
     }
@@ -145,7 +152,7 @@ public final class BaseAPI extends JavaPlugin {
     public boolean broadcastToAllClient(@Nullable Player except, World world, String namespace, String system, String event, Map<String, Object> data) {
         for (Player player : world.getPlayers()) {
             if (except == player) continue;
-            return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
+            return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
         return false;
     }
@@ -153,7 +160,7 @@ public final class BaseAPI extends JavaPlugin {
     public boolean broadcastToAllClient(@Nullable Player except, String namespace, String system, String event, Map<String, Object> data) {
         for (Player player : this.getServer().getOnlinePlayers()) {
             if (except == player) continue;
-            return neteaseChannel.sendModEvent(player.getUniqueId(), namespace, system, event, data);
+            return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
         return false;
     }
@@ -185,8 +192,24 @@ public final class BaseAPI extends JavaPlugin {
         return notifyToClient(uuid, "initTopBar", topBar.toHashMap());
     }
 
+    public boolean sendTopBar(TopBar topBar) {
+        HashMap<String, Object> data = topBar.toHashMap();
+        for (Player player : this.getServer().getOnlinePlayers()) {
+            notifyToClient(player.getUniqueId(), "initTopBar", data);
+        }
+        return true;
+    }
+
     public boolean updateTopBar(UUID uuid, TopBar topBar) {
-        return notifyToClient(uuid, "updateTopBar", topBar.toHashMap());
+        return notifyToClient(uuid, "updateTopBar", topBar.flushAllChanges());
+    }
+
+    public boolean updateTopBar(TopBar topBar) {
+        HashMap<String, Object> data = topBar.flushAllChanges();
+        for (Player player : this.getServer().getOnlinePlayers()) {
+            notifyToClient(player.getUniqueId(), "updateTopBar", data);
+        }
+        return true;
     }
 
     public boolean sendForm(UUID uuid, Form form) {

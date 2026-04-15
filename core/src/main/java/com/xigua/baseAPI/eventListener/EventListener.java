@@ -6,6 +6,7 @@ import com.xigua.baseAPI.api.events.NeteasePythonEvent;
 import com.xigua.baseAPI.api.events.PlayerBuyItemSuccessEvent;
 import com.xigua.baseAPI.api.events.PlayerUrgeShipEvent;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
+import com.xigua.cumulus.form.SimpleForm;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;

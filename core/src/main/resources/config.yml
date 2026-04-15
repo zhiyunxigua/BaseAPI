@@ -4,4 +4,9 @@ database:
   username: minecraft
   password: minecraft
 
+client:
+  namespace: "Xigua_common"
+  system-name: "main"
+
+debug: false
 enable-ping: false

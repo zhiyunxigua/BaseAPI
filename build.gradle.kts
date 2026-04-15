@@ -1,5 +1,7 @@
+import org.gradle.kotlin.dsl.project
+
 plugins {
-    java
+    `java-library`
     id("com.github.johnrengelman.shadow") version "8.1.1" apply false
     id("io.freefair.lombok") version "8.6"
 }

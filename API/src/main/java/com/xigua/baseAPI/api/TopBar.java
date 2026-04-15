@@ -1,17 +1,15 @@
 package com.xigua.baseAPI.api;
 
-import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
-import lombok.Singular;
-import lombok.experimental.SuperBuilder;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Getter
 public class TopBar {
     private final Map<String, Item> items;
+    private final Map<String, Object> pendingUpdates = new LinkedHashMap<>();
 
     private TopBar(Builder builder) {
         this.items = builder.items;
@@ -23,10 +21,41 @@ public class TopBar {
 
     public HashMap<String, Object> toHashMap() {
         HashMap<String, Object> result = new HashMap<>();
+        int index = 0;
         for (Map.Entry<String, Item> entry : items.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().toMap());
+            Map<String, Object> itemMap = entry.getValue().toMap();
+            itemMap.put("index", index++);
+            result.put(entry.getKey(), itemMap);
         }
         return result;
+    }
+
+    // 获取所有item的变更并清空
+    public HashMap<String, Object> flushAllChanges() {
+        HashMap<String, Object> itemsMap = new LinkedHashMap<>();
+
+        for (Map.Entry<String, Item> entry : items.entrySet()) {
+            String itemId = entry.getKey();
+            Item item = entry.getValue();
+
+            Map<String, Object> changes = null;
+
+            if (item instanceof TextItem) {
+                changes = ((TextItem) item).flushChanges();
+            } else if (item instanceof ImageItem) {
+                changes = ((ImageItem) item).flushChanges();
+            }
+
+            if (changes != null && !changes.isEmpty()) {
+                itemsMap.put(itemId, changes);
+            }
+        }
+
+        if (!itemsMap.isEmpty()) {
+            return itemsMap;
+        }
+
+        return null; // 没有变更
     }
 
     // 获取指定ID的Item
@@ -98,17 +127,37 @@ public class TopBar {
     @Getter
     public static class TextItem implements Item {
         private final String type = "text";
-        @Setter
         private String text;
-        @Setter
         private float[] color;
-        @Setter
         private String background;
+        private final Map<String, Object> cachedChanges = new LinkedHashMap<>();
 
         TextItem(String text, float[] color, String background) {
             this.text = text;
             this.color = color;
             this.background = background;
+        }
+
+        public void setText(String text) {
+            this.text = text;
+            cachedChanges.put("text", text);
+        }
+
+        public void setColor(float[] color) {
+            this.color = color;
+            cachedChanges.put("color", color);
+        }
+
+        public void setBackground(String background) {
+            this.background = background;
+            cachedChanges.put("background", background);
+        }
+
+        // 获取并清空缓存
+        public Map<String, Object> flushChanges() {
+            Map<String, Object> changes = new LinkedHashMap<>(cachedChanges);
+            cachedChanges.clear();
+            return changes;
         }
 
         @Override
@@ -133,16 +182,12 @@ public class TopBar {
     @Getter
     public static class ImageItem implements Item {
         private final String type = "image";
-        @Setter
         private String texture;
-        @Setter
         private float[] imageColor;
-        @Setter
         private String text;
-        @Setter
         private float[] textColor;
-        @Setter
         private String background;
+        private final Map<String, Object> cachedChanges = new LinkedHashMap<>();
 
         ImageItem(String texture, float[] imageColor, String text, float[] textColor, String background) {
             this.texture = texture;
@@ -150,6 +195,38 @@ public class TopBar {
             this.text = text;
             this.textColor = textColor;
             this.background = background;
+        }
+
+        public void setTexture(String texture) {
+            this.texture = texture;
+            cachedChanges.put("texture", texture);
+        }
+
+        public void setImageColor(float[] imageColor) {
+            this.imageColor = imageColor;
+            cachedChanges.put("image_color", imageColor);
+        }
+
+        public void setText(String text) {
+            this.text = text;
+            cachedChanges.put("text", text);
+        }
+
+        public void setTextColor(float[] textColor) {
+            this.textColor = textColor;
+            cachedChanges.put("text_color", textColor);
+        }
+
+        public void setBackground(String background) {
+            this.background = background;
+            cachedChanges.put("background", background);
+        }
+
+        // 获取并清空缓存
+        public Map<String, Object> flushChanges() {
+            Map<String, Object> changes = new LinkedHashMap<>(cachedChanges);
+            cachedChanges.clear();
+            return changes;
         }
 
         @Override

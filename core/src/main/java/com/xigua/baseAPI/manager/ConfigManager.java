@@ -39,10 +39,18 @@ public class ConfigManager {
     }
 
     public boolean getIsDebug() {
-        return config.getBoolean("is-debug", false);
+        return config.getBoolean("debug", false);
     }
 
     public boolean getEnablePing() {
         return config.getBoolean("enable-ping", false);
+    }
+
+    public String getClientNamespace() {
+        return config.getString("client.namespace", "Xigua_common");
+    }
+
+    public String getClientSystemName() {
+        return config.getString("client.system-name", "main");
     }
 }

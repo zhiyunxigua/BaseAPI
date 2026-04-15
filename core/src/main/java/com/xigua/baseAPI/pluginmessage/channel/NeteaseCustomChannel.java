@@ -5,18 +5,21 @@ import com.xigua.baseAPI.api.InputMode;
 import com.xigua.baseAPI.api.events.ClientLoadAddonFinishEvent;
 import com.xigua.baseAPI.api.events.NeteasePythonEvent;
 import com.xigua.baseAPI.api.events.PlayerInputModeChangeEvent;
+import com.xigua.baseAPI.api.events.UiInitFinished;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.api.protocol.packet.PyRpcPacker;
 import com.xigua.baseAPI.pluginmessage.PluginMessageChannel;
 import com.xigua.baseAPI.util.PluginMessageUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Event;
 import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 public class NeteaseCustomChannel implements PluginMessageChannel {
@@ -58,10 +61,6 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
 
         try (MessageUnpacker unpacker = MessagePack.newDefaultUnpacker(data)) {
             Object unpacked = PyRpcPacker.unpackObject(unpacker);
-
-            if (plugin.getConfig().getBoolean("debug", false)) {
-                plugin.getLogger().fine("收到网易RPC消息: " + unpacked.getClass().getName());
-            }
 
             String method;
             List args;
@@ -119,21 +118,29 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
             String event = (String) args.get(2);
             Map<String, Object> data = (Map<String, Object>) args.get(3);
 
-            if (plugin.getConfig().getBoolean("debug", false)) {
-                plugin.getLogger().fine(String.format("模组事件: %s:%s:%s from %s",
+            if (plugin.getConfigManager().getIsDebug()) {
+                plugin.getLogger().info(String.format("模组事件: %s:%s:%s from %s",
                         namespace, system, event, player.getName()));
             }
-
-            NeteasePythonEvent bukkitEvent = new NeteasePythonEvent(player, namespace, system, event, data);
+            Event bukkitEvent;
+            if (Objects.equals(namespace, plugin.getConfigManager().getClientNamespace()) && Objects.equals(system, plugin.getConfigManager().getClientSystemName())) {
+                if (plugin.getConfigManager().getIsDebug()) {
+                    plugin.getLogger().info(String.format("客户端模组，%s 事件", event));
+                }
+                bukkitEvent = switch (event) {
+                    case "UiInitFinished" -> new UiInitFinished(player);
+                    default -> new NeteasePythonEvent(player, namespace, system, event, data);
+                };
+            } else {
+                bukkitEvent = new NeteasePythonEvent(player, namespace, system, event, data);
+            }
             Bukkit.getPluginManager().callEvent(bukkitEvent);
-
         } catch (ClassCastException ignored) {
-
         }
     }
 
     private void handleAddonFinish(Player player) {
-        if (plugin.getConfig().getBoolean("debug", false)) {
+        if (plugin.getConfigManager().getIsDebug()) {
             plugin.getLogger().fine("玩家附加包加载完成: " + player.getName());
         }
         Bukkit.getPluginManager().callEvent(new ClientLoadAddonFinishEvent(player));
@@ -141,6 +148,9 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
 
     public void setPlayerInfo(Player player, Map<String, Object> data) {
         UUID uuid = player.getUniqueId();
+        if (plugin.getConfigManager().getIsDebug()) {
+            plugin.getLogger().info("SetPlayerInfo " + data);
+        }
         PlayerInfo info = new PlayerInfo();
         info.setGameId((String) data.getOrDefault("GameId", "0"));
         info.setGameKey((String) data.getOrDefault("GameKey", ""));

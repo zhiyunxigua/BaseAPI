@@ -1,5 +1,5 @@
 name: BaseAPI
-version: 1.0.2
+version: 1.0.3
 main: com.xigua.baseAPI.BaseAPI
 load: STARTUP
 authors: [ 西瓜 ]
