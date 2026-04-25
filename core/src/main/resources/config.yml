@@ -8,5 +8,6 @@ client:
   namespace: "Xigua_common"
   system-name: "main"
 
+pythonRPC-plugin-massage-name: "floodgate:netease"
 debug: false
 enable-ping: false

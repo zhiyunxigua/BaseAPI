@@ -1,20 +1,18 @@
 package com.xigua.baseAPI.eventListener;
 
 import com.xigua.baseAPI.BaseAPI;
+import com.xigua.baseAPI.api.TextBoard;
 import com.xigua.baseAPI.api.events.ClientLoadAddonFinishEvent;
 import com.xigua.baseAPI.api.events.NeteasePythonEvent;
 import com.xigua.baseAPI.api.events.PlayerBuyItemSuccessEvent;
 import com.xigua.baseAPI.api.events.PlayerUrgeShipEvent;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
-import com.xigua.cumulus.form.SimpleForm;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityRegainHealthEvent;
-import org.bukkit.event.entity.FoodLevelChangeEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.util.HashMap;
@@ -38,7 +36,7 @@ implements Listener {
     public void onNeteasePython(NeteasePythonEvent event) {
         Player player = event.getPlayer();
         if (Objects.equals(event.getNamespace(), "neteaseShop") && Objects.equals(event.getSystemName(), "neteaseShopBeh")) {
-            switch (event.getEventName()) {
+            switch (event.getPyEventName()) {
                 case "clientEnterEvent":
                     PlayerInfo playerInfo = this.plugin.getPlayerInfo(player);
                     if (playerInfo == null) {
@@ -70,5 +68,9 @@ implements Listener {
         resData.put("open", false);
         this.plugin.notifyToClient(event.getPlayer(), "Minecraft", "chatExtension", "ChatExtensionOpenStateChangedEvent", resData);
     }
-}
 
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        TextBoard.init(event.getPlayer());
+    }
+}

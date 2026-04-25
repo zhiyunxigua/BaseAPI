@@ -17,25 +17,9 @@ public class ConfigManager {
         return config.getBoolean("use-custom-shop", false);
     }
 
-    // 数据库配置
-    public String getDatabaseUrl() {
-        return config.getString("database.host", "jdbc:mysql://localhost:3306");
-    }
-
-    public String getDatabaseUsername() {
-        return config.getString("database.username", "root");
-    }
-
-    public String getDatabasePassword() {
-        return config.getString("database.password", "");
-    }
-
-    public String getTableName() {
-        return config.getString("database.table_name", "");
-    }
-
-    public String getDatabaseName() {
-        return config.getString("database.database_name", "minecraft");
+    // 网易RPC通道名字
+    public String getNeteasePythonRpcPluginMassageName() {
+        return config.getString("pythonRPC-plugin-massage-name", "floodgate:netease");
     }
 
     public boolean getIsDebug() {

@@ -1,6 +1,7 @@
 package com.xigua.baseAPI;
 
 import com.xigua.baseAPI.api.TopBar;
+import com.xigua.baseAPI.api.TextBoard;
 import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.eventListener.EventListener;
 import com.xigua.baseAPI.manager.*;
@@ -130,13 +131,15 @@ public final class BaseAPI extends JavaPlugin {
     }
 
     public boolean notifyToMultiClients(Collection<? extends Player> players, String namespace, String system, String event, Map<String, Object> data) {
+        boolean success = true;
         for (Player player : players) {
-            this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
+            success &= this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
-        return true;
+        return success;
     }
 
     public boolean notifyToClientsNearby(@Nullable Player except, Location loc, double dist, String namespace, String system, String event, Map<String, Object> data) {
+        boolean success = false;
         for (Player player : loc.getWorld().getPlayers()) {
             double dz;
             double dy;
@@ -144,25 +147,27 @@ public final class BaseAPI extends JavaPlugin {
             Location loc2 = player.getLocation();
             double dx = loc.getX() - loc2.getX();
             if (!(dx * dx + (dy = loc.getY() - loc2.getY()) * dy + (dz = loc.getZ() - loc2.getZ()) * dz < dist * dist)) continue;
-            return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
+            success |= this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
-        return false;
+        return success;
     }
 
     public boolean broadcastToAllClient(@Nullable Player except, World world, String namespace, String system, String event, Map<String, Object> data) {
+        boolean success = false;
         for (Player player : world.getPlayers()) {
             if (except == player) continue;
-            return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
+            success |= this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
-        return false;
+        return success;
     }
 
     public boolean broadcastToAllClient(@Nullable Player except, String namespace, String system, String event, Map<String, Object> data) {
+        boolean success = false;
         for (Player player : this.getServer().getOnlinePlayers()) {
             if (except == player) continue;
-            return this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
+            success |= this.notifyToClient(player.getUniqueId(), namespace, system, event, data);
         }
-        return false;
+        return success;
     }
 
     private void startPingTask() {
@@ -179,10 +184,10 @@ public final class BaseAPI extends JavaPlugin {
                         playerInfo.put("name", player.getDisplayName());
                         playerInfo.put("value", player.getPing());
 
-                        data.put(player.getName(), playerInfo);
+                        data.put(String.valueOf(player.getEntityId()), playerInfo);
                     }
                     // 调用通知方法，发送给所有玩家
-                    notifyToMultiClients(players, "Xigua_common", "main", "ping_update", data);
+                    notifyToMultiClients(players, configManager.getClientNamespace(), configManager.getClientSystemName(), "pong", data);
                 }
             }
         }.runTaskTimer(this, 0L, 20L); // 20 ticks = 1秒
@@ -190,6 +195,18 @@ public final class BaseAPI extends JavaPlugin {
 
     public boolean sendTopBar(UUID uuid, TopBar topBar) {
         return notifyToClient(uuid, "initTopBar", topBar.toHashMap());
+    }
+
+    public TextBoard.Builder createTextBoard(String text) {
+        return TextBoard.create(text);
+    }
+
+    public boolean initTextBoard(Player player) {
+        return TextBoard.init(player);
+    }
+
+    public boolean initTextBoards(Collection<? extends Player> players) {
+        return TextBoard.init(players);
     }
 
     public boolean sendTopBar(TopBar topBar) {

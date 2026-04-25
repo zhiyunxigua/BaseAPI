@@ -17,10 +17,7 @@ import org.msgpack.core.MessagePack;
 import org.msgpack.core.MessageUnpacker;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 
 public class NeteaseCustomChannel implements PluginMessageChannel {
     private final BaseAPI plugin;
@@ -29,7 +26,7 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
 
     @Override
     public String getIdentifier() {
-        return "floodgate:netease";
+        return plugin.getConfigManager().getNeteasePythonRpcPluginMassageName();
     }
 
     public NeteaseCustomChannel(BaseAPI plugin, PluginMessageUtils pluginMessageUtils, Map<UUID, PlayerInfo> playerInfos) {
@@ -127,10 +124,17 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                 if (plugin.getConfigManager().getIsDebug()) {
                     plugin.getLogger().info(String.format("客户端模组，%s 事件", event));
                 }
-                bukkitEvent = switch (event) {
-                    case "UiInitFinished" -> new UiInitFinished(player);
-                    default -> new NeteasePythonEvent(player, namespace, system, event, data);
-                };
+                switch (event) {
+                    case "UiInitFinished":
+                        bukkitEvent = new UiInitFinished(player);
+                        plugin.notifyToClient(player, "setLocalId", new HashMap<>() {{
+                            put("local_id", String.valueOf(player.getEntityId()));
+                        }});
+                        break;
+                    default:
+                        bukkitEvent = new NeteasePythonEvent(player, namespace, system, event, data);
+                        break;
+                }
             } else {
                 bukkitEvent = new NeteasePythonEvent(player, namespace, system, event, data);
             }

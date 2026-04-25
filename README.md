@@ -184,43 +184,44 @@ public class YourPlugin extends JavaPlugin {
 | `PlayerInputModeChangeEvent` | 玩家输入模式改变事件     |
 
 使用示例
+
 ```java
-import com.xigua.baseAPI.api.events.*;
+
 import org.bukkit.event.Listener;
 import org.bukkit.event.EventHandler;
 
 public class EventListener implements Listener {
-    
-  @EventHandler
-  public void onNeteasePython(NeteasePythonEvent event) {
-    Player player = event.player;
-    String namespace = event.namespace;
-    String systemName = event.systemName;
-    String eventName = event.eventName;
-    Map<String, Object> data = event.data;
-  }
 
-  @EventHandler
-  public void onClientLoadFinish(ClientLoadAddonFinishEvent event) {
-    Player player = event.player;
-  }
+    @EventHandler
+    public void onNeteasePython(NeteasePythonEvent event) {
+        Player player = event.player;
+        String namespace = event.namespace;
+        String systemName = event.systemName;
+        String eventName = event.eventName;
+        Map<String, Object> data = event.data;
+    }
 
-  @EventHandler
-  public void onPlayerBuySuc(PlayerBuyItemSuccessEvent event) {
-    Player player = event.player;
-  }
+    @EventHandler
+    public void onClientLoadFinish(ClientLoadAddonFinishEvent event) {
+        Player player = event.player;
+    }
 
-  @EventHandler
-  public void onPlayerUrgeShip(PlayerUrgeShipEvent event) {
-    Player player = event.player;
-  }
+    @EventHandler
+    public void onPlayerBuySuc(PlayerBuyItemSuccessEvent event) {
+        Player player = event.player;
+    }
 
-  @EventHandler
-  public void onPlayerInputModeChange(PlayerInputModeChangeEvent event) {
-    Player player = event.player;
-    InputMode oldInputMode = event.getOldInputMode();
-    InputMode newInputMode = event.getNewInputMode();
-  }
+    @EventHandler
+    public void onPlayerUrgeShip(PlayerUrgeShipEvent event) {
+        Player player = event.player;
+    }
+
+    @EventHandler
+    public void onPlayerInputModeChange(PlayerInputModeChangeEvent event) {
+        Player player = event.player;
+        InputMode oldInputMode = event.getOldInputMode();
+        InputMode newInputMode = event.getNewInputMode();
+    }
 
 }
 

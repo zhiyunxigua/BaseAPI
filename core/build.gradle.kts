@@ -7,8 +7,6 @@ plugins {
 }
 
 dependencies {
-    // 依赖API模块
-    api(project(":API"))
     api(project(":cumulus"))
 
     // 构建时依赖
@@ -46,6 +44,7 @@ tasks {
         }
         archiveClassifier.set("")
         archiveFileName.set("${rootProject.name}-${project.version}.jar")
+        destinationDirectory.set(rootProject.layout.buildDirectory.dir("libs"))
 
         minimize ()
     }

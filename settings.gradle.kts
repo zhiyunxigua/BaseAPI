@@ -13,6 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-include(":API")
 include(":core")
 include(":cumulus")
