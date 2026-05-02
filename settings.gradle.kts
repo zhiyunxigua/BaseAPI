@@ -13,5 +13,4 @@ dependencyResolutionManagement {
     }
 }
 
-include(":core")
 include(":cumulus")

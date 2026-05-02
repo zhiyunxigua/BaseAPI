@@ -130,6 +130,10 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                         plugin.notifyToClient(player, "setLocalId", new HashMap<>() {{
                             put("local_id", String.valueOf(player.getEntityId()));
                         }});
+                        System.out.println("是否是测试版" + plugin.isTestServerSafe(player));
+                        plugin.notifyToClient(player, "setTestServer", new HashMap<>() {{
+                            put("is_test_server", plugin.isTestServerSafe(player));
+                        }});
                         break;
                     default:
                         bukkitEvent = new NeteasePythonEvent(player, namespace, system, event, data);

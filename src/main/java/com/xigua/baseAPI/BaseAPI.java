@@ -381,6 +381,14 @@ public final class BaseAPI extends JavaPlugin {
         return -1L;
     }
 
+    public boolean isTestServerSafe(Player player) {
+        PlayerInfo info = getPlayerInfo(player);
+        if (info != null) {
+            return info.isTestServer();
+        }
+        return true;
+    }
+
     public PlayerInfo getPlayerInfo(Player player) {
         return this.getPlayerInfo(player.getUniqueId());
     }

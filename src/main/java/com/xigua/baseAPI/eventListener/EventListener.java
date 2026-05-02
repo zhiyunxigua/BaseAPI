@@ -72,5 +72,6 @@ implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         TextBoard.init(event.getPlayer());
+        plugin.notifyToClient(event.getPlayer(), "SetScoreboard", new HashMap<>());
     }
 }

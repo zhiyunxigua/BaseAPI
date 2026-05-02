@@ -25,6 +25,6 @@ public class PlayerInfo {
     @Builder.Default
     private InputMode inputMode = null;
     @Builder.Default
-    private boolean isTestServer = false;
+    private boolean isTestServer = true;
     private UUID uuid;
 }
