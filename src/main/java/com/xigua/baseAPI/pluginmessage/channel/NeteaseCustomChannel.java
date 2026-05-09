@@ -6,7 +6,6 @@ import com.xigua.baseAPI.api.events.ClientLoadAddonFinishEvent;
 import com.xigua.baseAPI.api.events.NeteasePythonEvent;
 import com.xigua.baseAPI.api.events.PlayerInputModeChangeEvent;
 import com.xigua.baseAPI.api.events.UiInitFinished;
-import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.api.protocol.packet.PyRpcPacker;
 import com.xigua.baseAPI.pluginmessage.PluginMessageChannel;
 import com.xigua.baseAPI.util.PluginMessageUtils;
@@ -22,17 +21,15 @@ import java.util.*;
 public class NeteaseCustomChannel implements PluginMessageChannel {
     private final BaseAPI plugin;
     private final PluginMessageUtils pluginMessageUtils;
-    private Map<UUID, PlayerInfo> playerInfos;
 
     @Override
     public String getIdentifier() {
         return plugin.getConfigManager().getNeteasePythonRpcPluginMassageName();
     }
 
-    public NeteaseCustomChannel(BaseAPI plugin, PluginMessageUtils pluginMessageUtils, Map<UUID, PlayerInfo> playerInfos) {
+    public NeteaseCustomChannel(BaseAPI plugin, PluginMessageUtils pluginMessageUtils) {
         this.plugin = plugin;
         this.pluginMessageUtils = pluginMessageUtils;
-        this.playerInfos = playerInfos;
     }
 
     @Override
@@ -87,9 +84,6 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                 case "ClientLoadAddonsFinishedFromGac":
                     handleAddonFinish(player);
                     break;
-                case "SetPlayerInfo":
-                    this.setPlayerInfo(player, (Map<String, Object>) args.get(0));
-                    break;
                 case "PlayerInputMode":
                     this.playerInputMode(player, (Map<String, Object>) args.get(0));
                     break;
@@ -130,10 +124,6 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
                         plugin.notifyToClient(player, "setLocalId", new HashMap<>() {{
                             put("local_id", String.valueOf(player.getEntityId()));
                         }});
-                        System.out.println("是否是测试版" + plugin.isTestServerSafe(player));
-                        plugin.notifyToClient(player, "setTestServer", new HashMap<>() {{
-                            put("is_test_server", plugin.isTestServerSafe(player));
-                        }});
                         break;
                     default:
                         bukkitEvent = new NeteasePythonEvent(player, namespace, system, event, data);
@@ -154,31 +144,7 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
         Bukkit.getPluginManager().callEvent(new ClientLoadAddonFinishEvent(player));
     }
 
-    public void setPlayerInfo(Player player, Map<String, Object> data) {
-        UUID uuid = player.getUniqueId();
-        if (plugin.getConfigManager().getIsDebug()) {
-            plugin.getLogger().info("SetPlayerInfo " + data);
-        }
-        PlayerInfo info = new PlayerInfo();
-        info.setGameId((String) data.getOrDefault("GameId", "0"));
-        info.setGameKey((String) data.getOrDefault("GameKey", ""));
-        info.setTestServer((boolean) data.getOrDefault("TestServer", true));
-        info.setShopServerUrl((String) data.getOrDefault("ShopServerUrl", ""));
-        info.setWebServerUrl((String) data.getOrDefault("WebServerUrl", ""));
-        info.setProxyUid(((Number) data.getOrDefault("ProxyUid", 0)).longValue());
-        Object uuidObj = data.getOrDefault("Uuid", uuid);
-        if (uuidObj instanceof String) {
-            try {
-                info.setUuid(UUID.fromString((String) uuidObj));
-            } catch (IllegalArgumentException ignored) {
-            }
-        }
-        this.playerInfos.put(uuid, info);
-    }
-
     public void playerInputMode(Player player, Map<String, Object> data) {
-        UUID uuid = player.getUniqueId();
-
         // 获取输入模式
         Object inputModeObj = data.get("input_mode");
         InputMode inputMode = null;
@@ -191,16 +157,8 @@ public class NeteaseCustomChannel implements PluginMessageChannel {
             }
         }
 
-        // 更新玩家信息
-        PlayerInfo playerInfo = playerInfos.get(uuid);
-        if (playerInfo == null) {
-            playerInfo = new PlayerInfo();
-            playerInfos.put(uuid, playerInfo);
-        }
-
-        InputMode oldInputMode = playerInfo.getInputMode();
-        playerInfo.setInputMode(inputMode);
-
+        InputMode oldInputMode = this.plugin.getPlayerManager().getPlayerInputMode(player);
+        this.plugin.getPlayerManager().setPlayerInputMode(player, inputMode);
         PlayerInputModeChangeEvent event = new PlayerInputModeChangeEvent(player, oldInputMode, inputMode);
         Bukkit.getPluginManager().callEvent(event);
     }

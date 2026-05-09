@@ -2,7 +2,6 @@ package com.xigua.baseAPI;
 
 import com.xigua.baseAPI.api.TopBar;
 import com.xigua.baseAPI.api.TextBoard;
-import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
 import com.xigua.baseAPI.eventListener.EventListener;
 import com.xigua.baseAPI.manager.*;
 import com.xigua.baseAPI.pluginmessage.ChannelRegistry;
@@ -18,7 +17,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.concurrent.FutureCallback;
@@ -40,7 +38,9 @@ public final class BaseAPI extends JavaPlugin {
     private EventListener eventListener;
     @Getter
     private String serverVersion;
-    private Map<UUID, PlayerInfo> playerInfos = new ConcurrentHashMap<UUID, PlayerInfo>();
+
+    @Getter
+    private boolean isTestServer;
 
     @Getter
     private ConfigManager configManager;      // 配置文件管理
@@ -48,8 +48,6 @@ public final class BaseAPI extends JavaPlugin {
     private CommandManager commandManager;    // 指令管理
     @Getter
     private PlayerManager playerManager;      // 玩家数据管理
-    @Getter
-    private DatabaseManager databaseManager;  // 数据库
 
     private ChannelRegistry registry;
     private PluginMessageUtils pluginMessageUtils;
@@ -59,7 +57,6 @@ public final class BaseAPI extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        saveDefaultConfig();
         // 注册管理器
         configManager = new ConfigManager(this);
         if (configManager.getIsDebug()) {
@@ -67,7 +64,7 @@ public final class BaseAPI extends JavaPlugin {
         }
         commandManager = new CommandManager(this);
         playerManager = new PlayerManager(this);
-        databaseManager = new DatabaseManager(this);
+        isTestServer = configManager.isTestServer();
 
 
         // 获取服务器版本
@@ -76,26 +73,19 @@ public final class BaseAPI extends JavaPlugin {
         // 注册插件消息
         this.formChannel = new FormChannel(this, pluginMessageUtils);
         this.transferChannel = new TransferChannel(this, pluginMessageUtils);
-        this.neteaseChannel = new NeteaseCustomChannel(this, pluginMessageUtils, playerInfos);
+        this.neteaseChannel = new NeteaseCustomChannel(this, pluginMessageUtils);
 
         this.registry = new ChannelRegistry(this);
         registry.registerChannel(formChannel);
         registry.registerChannel(transferChannel);
         registry.registerChannel(neteaseChannel);
-        //
+        // 启动网易商城订单服务
         WebUtil.setPlugin(this);
         WebUtil.startHttpClient();
 
         this.eventListener = new EventListener(this);
 
         this.getServer().getPluginManager().registerEvents(this.eventListener, this);
-        this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable(){
-
-            @Override
-            public void run() {
-                WebUtil.reportFriendOnline();
-            }
-        }, 0L, 6000L);
 
         // 启动ping发送
         if (configManager.getEnablePing()) {
@@ -241,35 +231,8 @@ public final class BaseAPI extends JavaPlugin {
         return transferChannel.sendTransfer(uuid, address, port);
     }
 
-    public void openShop(Player player) {
-        this.notifyToClient(player, SHOP_MOD_NAME, SHOP_SERVER_SYS, "OpenShopEvent", new HashMap<String, Object>());
-    }
-
-    public void closeShop(Player player) {
-        this.notifyToClient(player, SHOP_MOD_NAME, SHOP_SERVER_SYS, "CloseShopEvent", new HashMap<String, Object>());
-    }
-
-    public void showHintOne(Player player, @Nullable String text) {
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        ArrayList<String> hints = new ArrayList<String>();
-        hints.add(text);
-        data.put("hint", hints);
-        text = text == null ? "" : text;
-        this.notifyToClient(player, SHOP_MOD_NAME, SHOP_SERVER_SYS, "ShowHintEvent", data);
-    }
-
-    public void showHintTwo(Player player, String head, @Nullable String tail) {
-        tail = tail == null ? "" : tail;
-        HashMap<String, Object> data = new HashMap<String, Object>();
-        ArrayList<String> hints = new ArrayList<String>();
-        hints.add(head);
-        hints.add(tail);
-        data.put("hint", hints);
-        this.notifyToClient(player, SHOP_MOD_NAME, SHOP_SERVER_SYS, "ShowHintEvent", data);
-    }
-
     public void getPlayerOrderList(final Player player, final FutureCallback<Map<String, Object>> callback) {
-        FutureCallback<HttpResponse> _cb = new FutureCallback<>(){
+        FutureCallback<HttpResponse> _cb = new FutureCallback<>() {
             @Override
             public void completed(HttpResponse response) {
                 try {
@@ -283,7 +246,7 @@ public final class BaseAPI extends JavaPlugin {
                         return;
                     }
 
-                    HashMap<String, Object> res = new HashMap<String, Object>();
+                    HashMap<String, Object> res = new HashMap<>();
                     res.put("player", player);
                     res.put("json_result", object);
 
@@ -325,7 +288,7 @@ public final class BaseAPI extends JavaPlugin {
                         return;
                     }
 
-                    HashMap<String, Object> res = new HashMap<String, Object>();
+                    HashMap<String, Object> res = new HashMap<>();
                     res.put("player", player);
                     res.put("json_result", object);
 
@@ -352,54 +315,65 @@ public final class BaseAPI extends JavaPlugin {
         WebUtil.postFinPlayerOrder(player, orderList, _cb);
     }
 
-    public List<Long> getAllPlayerUids() {
-        ArrayList<Long> res = new ArrayList<Long>();
-        for (PlayerInfo info : this.playerInfos.values()) {
-            res.add(info.getProxyUid());
-        }
-        return res;
+    /**
+     * 获取玩家的UID（网易用户ID）
+     * @param player 玩家
+     */
+    public long getPlayerUid(final Player player) {
+        return this.playerManager.getCachedUid(player);
     }
 
-    public List<String> getAllPlayerUidStrs() {
-        ArrayList<String> res = new ArrayList<String>();
-        for (PlayerInfo info : this.playerInfos.values()) {
-            long tmp = info.getProxyUid();
-            res.add(Long.toString(tmp));
-        }
-        return res;
-    }
+    /**
+     * 获取玩家的UID（网易用户ID）
+     * @param player 玩家
+     * @param callback 回调函数，返回的Map中包含 uid 字段
+     */
+    public void queryPlayerUid(final Player player, final FutureCallback<Map<String, Object>> callback) {
+        FutureCallback<HttpResponse> _cb = new FutureCallback<>() {
+            @Override
+            public void completed(HttpResponse response) {
+                try {
+                    String responseStr = EntityUtils.toString(response.getEntity(), "UTF-8");
+                    JsonObject object = JsonParser.parseString(responseStr).getAsJsonObject();
+                    int resCode = object.get("code").getAsInt();
 
-    public long getPlayerUid(Player player) {
-        return this.getPlayerUid(player.getUniqueId());
-    }
+                    if (response.getStatusLine().getStatusCode() != 200 || resCode != 0) {
+                        String message = object.has("message") ? object.get("message").getAsString() : "未知错误";
+                        Exception ex = new Exception("获取UID失败: " + message);
+                        Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.failed(ex));
+                        return;
+                    }
 
-    public long getPlayerUid(UUID uuid) {
-        PlayerInfo playerInfo = this.getPlayerInfo(uuid);
-        if (playerInfo != null) {
-            return playerInfo.getProxyUid();
-        }
-        return -1L;
-    }
+                    // 解析返回的uid
+                    JsonObject entity = object.getAsJsonObject("entity");
+                    long uid = entity.get("uid").getAsLong();
 
-    public boolean isTestServerSafe(Player player) {
-        PlayerInfo info = getPlayerInfo(player);
-        if (info != null) {
-            return info.isTestServer();
-        }
-        return true;
-    }
+                    HashMap<String, Object> res = new HashMap<>();
+                    res.put("player", player);
+                    res.put("uid", uid);
+                    res.put("json_result", object);
 
-    public PlayerInfo getPlayerInfo(Player player) {
-        return this.getPlayerInfo(player.getUniqueId());
-    }
+                    Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.completed(res));
 
-    public PlayerInfo getPlayerInfo(UUID uuid) {
-        return this.playerInfos.getOrDefault(uuid, null);
-    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    Bukkit.getScheduler().runTask(BaseAPI.this, () ->
+                            callback.failed(new Exception("解析UID响应失败: " + e.getMessage()))
+                    );
+                }
+            }
 
-    public void removePlayerInfo(Player player) {
-        UUID javaUuid = player.getUniqueId();
-        this.playerInfos.remove(javaUuid);
-    }
+            @Override
+            public void failed(Exception ex) {
+                Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.failed(ex));
+            }
 
+            @Override
+            public void cancelled() {
+                Bukkit.getScheduler().runTask(BaseAPI.this, () -> callback.cancelled());
+            }
+        };
+
+        WebUtil.getUidFromUuid(player, _cb);
+    }
 }

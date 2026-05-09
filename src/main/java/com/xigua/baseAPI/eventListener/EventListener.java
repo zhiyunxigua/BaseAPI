@@ -1,12 +1,12 @@
 package com.xigua.baseAPI.eventListener;
 
 import com.xigua.baseAPI.BaseAPI;
-import com.xigua.baseAPI.api.TextBoard;
 import com.xigua.baseAPI.api.events.ClientLoadAddonFinishEvent;
 import com.xigua.baseAPI.api.events.NeteasePythonEvent;
 import com.xigua.baseAPI.api.events.PlayerBuyItemSuccessEvent;
 import com.xigua.baseAPI.api.events.PlayerUrgeShipEvent;
-import com.xigua.baseAPI.api.playerInfo.PlayerInfo;
+import com.xigua.baseAPI.manager.ConfigManager;
+import com.xigua.baseAPI.manager.PlayerManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -27,28 +27,47 @@ implements Listener {
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        Player player = event.getPlayer();
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
+            PlayerManager playerManager = plugin.getPlayerManager();
+            if (!playerManager.hasCachedUid(player)) {
+                playerManager.getOrFetchUid(player, new PlayerManager.UidCallback() {
+                    @Override
+                    public void onResult(long uid) {
+                    }
+
+                    @Override
+                    public void onError(Exception ex) {
+                        plugin.getLogger().warning("获取玩家 " + player.getName() + " UID失败: " + ex.getMessage());
+                    }
+                });
+            }
+        });
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        this.plugin.removePlayerInfo(player);
+        PlayerManager playerManager = plugin.getPlayerManager();
+        if (playerManager != null) {
+            playerManager.removePlayerCache(player);
+        }
     }
 
     @EventHandler
     public void onNeteasePython(NeteasePythonEvent event) {
         Player player = event.getPlayer();
+        ConfigManager.NeteaseShop shop = plugin.getConfigManager().getNeteaseShop();
         if (Objects.equals(event.getNamespace(), "neteaseShop") && Objects.equals(event.getSystemName(), "neteaseShopBeh")) {
             switch (event.getPyEventName()) {
                 case "clientEnterEvent":
-                    PlayerInfo playerInfo = this.plugin.getPlayerInfo(player);
-                    if (playerInfo == null) {
-                        this.plugin.getLogger().info("player info is null,from shop");
-                        return;
-                    }
-                    HashMap<String, Object> resData = new HashMap<String, Object>();
-                    resData.put("gameId", playerInfo.getGameId());
-                    resData.put("isTestServer", playerInfo.isTestServer());
-                    resData.put("useCustomShop", this.plugin.getConfigManager().getUseCustomShop());
+                    HashMap<String, Object> resData = new HashMap<>();
+                    resData.put("gameId", shop.getBE().getGameId());
+                    resData.put("isTestServer", plugin.getConfigManager().isTestServer());
+                    resData.put("useCustomShop", false);
                     resData.put("cacheTime", 1);
-                    resData.put("uid", playerInfo.getProxyUid());
+                    resData.put("uid", plugin.getPlayerUid(player));
                     resData.put("platformUid", "");
                     this.plugin.notifyToClient(player, "neteaseShop", "neteaseShopDev", "serverReadyEvent", resData);
                     break;
@@ -59,7 +78,6 @@ implements Listener {
                     Bukkit.getPluginManager().callEvent(new PlayerBuyItemSuccessEvent(player));
             }
         }
-
     }
 
     @EventHandler
@@ -67,11 +85,5 @@ implements Listener {
         HashMap<String, Object> resData = new HashMap<String, Object>();
         resData.put("open", false);
         this.plugin.notifyToClient(event.getPlayer(), "Minecraft", "chatExtension", "ChatExtensionOpenStateChangedEvent", resData);
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        TextBoard.init(event.getPlayer());
-        plugin.notifyToClient(event.getPlayer(), "SetScoreboard", new HashMap<>());
     }
 }

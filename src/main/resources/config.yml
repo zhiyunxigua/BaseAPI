@@ -11,3 +11,20 @@ client:
 pythonRPC-plugin-massage-name: "floodgate:netease"
 debug: false
 enable-ping: false
+
+is-test-server: true
+
+netease-shop:
+  enable-java: false
+  bedrock:
+    shop-url: "http://gasproxy.mc.netease.com:60002"
+    test-shop-url: "http://gasproxy.mc.netease.com:60001"
+    game-id: ""
+    game-key: ""
+    test-game-key: ""
+  java:
+    shop-url: "http://gasproxy.mc.netease.com:60004"
+    test-shop-url: "http://gasproxy.mc.netease.com:60003"
+    game-id: ""
+    game-key: ""
+    test-game-key: ""

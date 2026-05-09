@@ -29,22 +29,19 @@ dependencies {
     // Netty (for ByteBuf)
     compileOnly(libs.netty.buffer)
 
+    compileOnly(libs.floodgate)
+
     // 运行时依赖
-    api("com.google.inject:guice:6.0.0")
+    api(libs.inject)
     // http服务
-    implementation("org.apache.httpcomponents:httpclient:4.5.13")
-    implementation("org.apache.httpcomponents:httpasyncclient:4.1.5")
+    implementation(libs.httpclient)
+    implementation(libs.httpasyncclient)
 
     implementation(libs.fastutil)
 
-    // Nimbus JOSE + JWT
-    implementation("com.nimbusds:nimbus-jose-jwt:9.25")
-
     // MessagePack
-    implementation("org.msgpack:msgpack-core:0.9.0")
+    implementation(libs.messagepack)
 
-    // NukkitX Protocol (for VarInts and Zlib)
-    implementation("com.nukkitx.network:raknet:1.6.28-SNAPSHOT")
 }
 
 tasks {
